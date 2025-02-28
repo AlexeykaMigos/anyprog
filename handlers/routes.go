@@ -10,7 +10,7 @@ import (
 func SetupRoutes(db *sql.DB) *mux.Router {
 	router := mux.NewRouter()
 
-	// Middleware для извлечения переменных из пути
+	//переменные в пути
 	router.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			vars := mux.Vars(r)
@@ -19,7 +19,6 @@ func SetupRoutes(db *sql.DB) *mux.Router {
 		})
 	})
 
-	// Регистрация маршрутов
 	router.HandleFunc("/api/products", GetProducts(db)).Methods("GET")
 	router.HandleFunc("/api/products", AddProduct(db)).Methods("POST")
 	router.HandleFunc("/api/products/{id}", UpdateProduct(db)).Methods("PUT")

@@ -6,6 +6,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -31,15 +34,31 @@ func InitDB() *sql.DB {
 		log.Fatal(err)
 	}
 
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY,title VARCHAR(255) NOT NULL,description VARCHAR(255) NOT NULL,price DECIMAL(10, 2) NOT NULL,version INT NOT NULL)")
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS product_versions (id SERIAL PRIMARY KEY,product_id INT NOT NULL REFERENCES products(id),title TEXT NOT NULL,description TEXT,price DECIMAL(10, 2) NOT NULL,version INT NOT NULL)")
-	if err != nil {
-		log.Fatal(err)
-	}
+	//запускаем миграции
+	runMigrations(db)
 
 	log.Println("Connected to the database")
 	return db
+}
+
+func runMigrations(db *sql.DB) {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		log.Fatal("Failed to create migration driver:", err)
+	}
+
+	m, err := migrate.NewWithDatabaseInstance(
+		"file:///app/migrations",
+		"postgres", driver,
+	)
+	if err != nil {
+		log.Fatal("Failed to create migration instance:", err)
+	}
+
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		log.Fatal("Failed to apply migrations:", err)
+	}
+
+	log.Println("Migrations applied successfully")
 }

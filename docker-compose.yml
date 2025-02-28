@@ -1,23 +1,26 @@
 version: '3.8'
 
 services:
-  # Go application service
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080" # Expose port 8080
+      - "8080:8080"
     environment:
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - DB_NAME=pgdb
+    volumes:
+      - ./migrations:/app/migrations
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
-  # PostgreSQL database service
+
   db:
     image: postgres:15-alpine
     environment:
@@ -25,10 +28,14 @@ services:
       POSTGRES_PASSWORD: secret
       POSTGRES_DB: pgdb
     ports:
-      - "5432:5432" # Expose port 5432
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d pgdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-# Define a volume for PostgreSQL data persistence
 volumes:
   postgres_data:

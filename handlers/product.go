@@ -40,12 +40,16 @@ func AddProduct(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		err := db.QueryRow("INSERT INTO products (title, description, price, version) VALUES ($1, $2, $3, $4) RETURNING id", p.Title, p.Description, p.Price, p.Version).Scan(&p.ID)
+		err := db.QueryRow(
+			"INSERT INTO products (title, description, price, version) VALUES ($1, $2, $3, $4) RETURNING id",
+			p.Title, p.Description, p.Price, p.Version,
+		).Scan(&p.ID)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(p)
 	}
@@ -70,10 +74,9 @@ func UpdateProduct(db *sql.DB) http.HandlerFunc {
 		defer tx.Rollback()
 
 		var currentProduct models.Product
-		err = tx.QueryRow("SELECT id, title, description, price, version FROM products WHERE id = $1", id).Scan(
-			&currentProduct.ID, &currentProduct.Title, &currentProduct.Description, &currentProduct.Price, &currentProduct.Version,
-		)
-		if err != nil {
+		if err := tx.QueryRow(
+			"SELECT id, title, description, price, version FROM products WHERE id = $1", id,
+		).Scan(&currentProduct.ID, &currentProduct.Title, &currentProduct.Description, &currentProduct.Price, &currentProduct.Version); err != nil {
 			if err == sql.ErrNoRows {
 				http.Error(w, "Product not found", http.StatusNotFound)
 			} else {
@@ -82,21 +85,19 @@ func UpdateProduct(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		_, err = tx.Exec(
+		if _, err := tx.Exec(
 			"INSERT INTO product_versions (product_id, title, description, price, version) VALUES ($1, $2, $3, $4, $5)",
 			currentProduct.ID, currentProduct.Title, currentProduct.Description, currentProduct.Price, currentProduct.Version,
-		)
-		if err != nil {
+		); err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
 
 		updatedProduct.Version = currentProduct.Version + 1
-		_, err = tx.Exec(
+		if _, err := tx.Exec(
 			"UPDATE products SET title = $1, description = $2, price = $3, version = $4 WHERE id = $5",
 			updatedProduct.Title, updatedProduct.Description, updatedProduct.Price, updatedProduct.Version, id,
-		)
-		if err != nil {
+		); err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
@@ -106,7 +107,9 @@ func UpdateProduct(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		w.WriteHeader(http.StatusNoContent)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Product updated successfully"})
 	}
 }
 
@@ -135,11 +138,10 @@ func RollbackProduct(db *sql.DB) http.HandlerFunc {
 		defer tx.Rollback()
 
 		var rollbackProduct models.Product
-		err = tx.QueryRow(
+		if err := tx.QueryRow(
 			"SELECT title, description, price, version FROM product_versions WHERE product_id = $1 AND version = $2",
 			id, versionInt,
-		).Scan(&rollbackProduct.Title, &rollbackProduct.Description, &rollbackProduct.Price, &rollbackProduct.Version)
-		if err != nil {
+		).Scan(&rollbackProduct.Title, &rollbackProduct.Description, &rollbackProduct.Price, &rollbackProduct.Version); err != nil {
 			if err == sql.ErrNoRows {
 				http.Error(w, "Specified version not found", http.StatusNotFound)
 			} else {
@@ -148,11 +150,10 @@ func RollbackProduct(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		_, err = tx.Exec(
+		if _, err := tx.Exec(
 			"UPDATE products SET title = $1, description = $2, price = $3, version = $4 WHERE id = $5",
 			rollbackProduct.Title, rollbackProduct.Description, rollbackProduct.Price, rollbackProduct.Version, id,
-		)
-		if err != nil {
+		); err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 			return
 		}
@@ -162,6 +163,7 @@ func RollbackProduct(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{"message": "Product rolled back successfully"})
 	}

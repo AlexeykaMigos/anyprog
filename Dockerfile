@@ -5,6 +5,8 @@ WORKDIR /app
 # Копируем и загружаем зависимости
 COPY go.mod go.sum ./
 # Копируем исходный код и .env файл
+RUN go mod download
+
 COPY . .
 COPY .env .env
 
