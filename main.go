@@ -2,6 +2,7 @@ package main
 
 import (
 	"anyprog/database"
+	_ "anyprog/docs"
 	"anyprog/handlers"
 	"github.com/swaggo/http-swagger"
 	"log"
