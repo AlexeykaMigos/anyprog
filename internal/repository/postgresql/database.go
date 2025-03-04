@@ -1,4 +1,4 @@
-package database
+package postgresql
 
 import (
 	"database/sql"
@@ -35,9 +35,10 @@ func InitDB() *sql.DB {
 	}
 
 	//запускаем миграции
+
 	runMigrations(db)
 
-	log.Println("Connected to the database")
+	log.Println("Connected to the repository")
 	return db
 }
 

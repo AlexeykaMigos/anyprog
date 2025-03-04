@@ -3,12 +3,12 @@ FROM golang:1.23-alpine AS builder
 WORKDIR /app
 
 # Копируем и загружаем зависимости
-COPY go.mod go.sum ./
+COPY ../go.mod go.sum ./
 # Копируем исходный код и .env файл
 RUN go mod download
 
-COPY . .
-COPY .env .env
+COPY .. .
+COPY ../.env .env
 
 # Собираем приложение
 RUN CGO_ENABLED=0 GOOS=linux go build -o myapp .

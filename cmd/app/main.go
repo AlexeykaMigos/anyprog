@@ -1,9 +1,9 @@
 package main
 
 import (
-	"anyprog/database"
 	_ "anyprog/docs"
-	"anyprog/handlers"
+	"anyprog/internal/repository/postgresql"
+	"anyprog/internal/routes"
 	"github.com/swaggo/http-swagger"
 	"log"
 	"net/http"
@@ -11,14 +11,14 @@ import (
 
 func main() {
 	// Инициализация базы данных
-	db := database.InitDB()
+	db := postgresql.InitDB()
 	defer db.Close()
 
 	// Инициализация маршрутов
 
-	router := handlers.SetupRoutes(db)
+	router := routes.SetupRoutes(db)
 	router.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 
-	// Запуск сервера
+	//запуск сервера
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

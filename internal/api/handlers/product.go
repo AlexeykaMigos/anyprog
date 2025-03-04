@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"anyprog/models"
+	"anyprog/internal/models"
 	"database/sql"
 	"encoding/json"
 	"net/http"
