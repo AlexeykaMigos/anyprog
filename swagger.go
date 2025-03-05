@@ -9,7 +9,7 @@ import (
 // @version 1.0
 // @description API для управления товарами
 // @host localhost:8080
-// @BasePath /api
+// @BasePath /usecase
 
 // Product представляет модель товара.
 type Product struct {
